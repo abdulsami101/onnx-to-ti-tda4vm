@@ -414,7 +414,7 @@ def get_configs(settings, work_dir):
                 'input_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_ICMS_DET]['input_dataset'],
             },
             preprocess=preproc_transforms.get_transform_onnx(
-                resize=(384, 640), 
+                resize=(384, 640),   
                 crop=(384, 640), 
                 reverse_channels=False,
                 data_layout=constants.NCHW,
