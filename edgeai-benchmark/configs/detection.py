@@ -413,14 +413,30 @@ def get_configs(settings, work_dir):
                 'calibration_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_ICMS_DET]['calibration_dataset'],
                 'input_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_ICMS_DET]['input_dataset'],
             },
-            preprocess=preproc_transforms.get_transform_onnx((384,640), (384,640), reverse_channels=False, backend='cv2', resize_with_pad=False, data_layout=constants.NCHW),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False),
+            preprocess=preproc_transforms.get_transform_onnx(
+                resize=(384, 640), 
+                crop=(384, 640), 
+                reverse_channels=False,
+                data_layout=constants.NCHW,
+                backend='cv2',
+                resize_with_pad=[True, "corner"],
+                pad_color=[114, 114, 114]),
+            session=onnx_session_type(**sessions.get_common_session_cfg(settings, work_dir=work_dir),
                 runtime_options=settings.runtime_options_onnx_np2(
-                    det_options=True, ext_options={'object_detection:meta_arch_type': 6}),
+                    det_options=True, 
+                    ext_options={
+                        'object_detection:meta_arch_type': 6,
+                        'object_detection:meta_layers_names_list': 'models/detection/w_sami.prototxt'
+                    },
+                    fast_calibration=True),
                 model_path='models/detection/w_sami.onnx'),
-            postprocess=postproc_detection_onnx,
-            metric=dict(label_offset_pred=0),
-            model_info=dict(metric_reference={'accuracy_ap[.5:.95]%': 0.0}, model_shortlist=10)
+            postprocess=postproc_transforms.get_transform_detection_yolov5_onnx(
+                squeeze_axis=None, 
+                normalized_detections=False, 
+                resize_with_pad=True, 
+                formatter=postprocess.DetectionBoxSL2BoxLS()),
+            metric=dict(label_offset_pred=datasets.coco_det_label_offset_80to90(label_offset=1)),
+            model_info=dict(metric_reference={'accuracy_ap[.5:.95]%': 0.0}, model_shortlist=10, compact_name='icms-detect-w_sami-384x640')
         ),
         #################################################################
         #       TENSORFLOW-LITE MODELS
