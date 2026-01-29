@@ -1,0 +1,39 @@
+TARGET_SOC:     TDA4VM
+TARGET_MACHINE: pc
+TIDL_TOOLS_PATH=/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/tools/tidl_tools_package/TDA4VM/tidl_tools
+LD_LIBRARY_PATH=/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/tools/tidl_tools_package/TDA4VM/tidl_tools:
+PYTHONPATH=:
+===================================================================
+OpenCV bindings requires "numpy" package.
+Install it via command:
+    pip install numpy
+Traceback (most recent call last):
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/scripts/benchmark_modelzoo.py", line 35, in <module>
+    from edgeai_benchmark import *
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/edgeai_benchmark/__init__.py", line 32, in <module>
+    from . import core
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/edgeai_benchmark/core/__init__.py", line 35, in <module>
+    from .runtime_options import *
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/edgeai_benchmark/core/runtime_options.py", line 35, in <module>
+    import cv2
+  File "/home/deltax/miniconda3/envs/vision/lib/jvm/languages/python/lib/python3.10/site-packages/cv2/__init__.py", line 12, in <module>
+    import numpy.core.multiarray
+ModuleNotFoundError: No module named 'numpy.core'
+===================================================================
+===================================================================
+OpenCV bindings requires "numpy" package.
+Install it via command:
+    pip install numpy
+Traceback (most recent call last):
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/scripts/generate_report.py", line 34, in <module>
+    from edgeai_benchmark import *
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/edgeai_benchmark/__init__.py", line 32, in <module>
+    from . import core
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/edgeai_benchmark/core/__init__.py", line 35, in <module>
+    from .runtime_options import *
+  File "/home/deltax/work/onnx_model_conversion/edgeai-tensorlab/edgeai-benchmark/edgeai_benchmark/core/runtime_options.py", line 35, in <module>
+    import cv2
+  File "/home/deltax/miniconda3/envs/vision/lib/jvm/languages/python/lib/python3.10/site-packages/cv2/__init__.py", line 12, in <module>
+    import numpy.core.multiarray
+ModuleNotFoundError: No module named 'numpy.core'
+===================================================================

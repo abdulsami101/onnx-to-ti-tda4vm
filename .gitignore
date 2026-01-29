@@ -1,0 +1,67 @@
+*.pyc
+*.egg-info/
+.idea/
+.vscode/
+edgeai-benchmark/tools/tidl_tools_package/*
+edgeai-benchmark/work_dirs/*
+edgeai-modelmaker/data/projects/*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg
+MANIFEST
+*.log
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dataset directories
+dataset/
+datasets/
+edgeai-benchmark/dataset/
+edgeai-benchmark/dependencies/datasets/
+
+# Model files (large binaries - add specific models you want to share)
+*.onnx
+*.tflite
+*.pb
+*.pth
+*.pt
+*.bin
+*.tar.gz
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs
+*.log
+logs/
+
+# Keep important documentation
+!ONNX_CONVERSION_GUIDE.md
+!README.md
+!LICENSE
