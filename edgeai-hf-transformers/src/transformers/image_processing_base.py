@@ -52,7 +52,7 @@ logger = logging.get_logger(__name__)
 
 
 # TODO: Move BatchFeature to be imported by both image_processing_utils and image_processing_utils
-# We override the class string here, but logic is the same.
+# We override the class string here, but logic is the same. 
 class BatchFeature(BaseBatchFeature):
     r"""
     Holds the output of the image processor specific `__call__` methods.
