@@ -1,110 +1,489 @@
-# EdgeAI-Benchmark
+# Complete Guide: Converting ONNX Model to TI Board (ICMS Detection Model)
 
-### Notice
-If you have not visited the following landing pages, please do so before attempting to use this repository.
-- https://www.ti.com/edgeai
-- https://github.com/TexasInstruments/edgeai
-- https://dev.ti.com/edgeai/
+This guide walks you through the complete process of converting your custom ONNX detection model (`icms-detect-001`) for use on TI embedded boards (like TDA4VM). The process includes model compilation, quantization, and packaging.
 
-The Python version requirement has changed to 3.10 for SDK/TIDL 9.0 onwards. Please see [setup instructions](./docs/setup_instructions.md) for more information.
+---
 
-<hr>
+## Table of Contents
+1. [Prerequisites](#prerequisites)
+2. [Step 1: Prepare Your Dataset](#step-1-prepare-your-dataset)
+3. [Step 2: Configure Your Model](#step-2-configure-your-model)
+4. [Step 3: Run Model Compilation](#step-3-run-model-compilation)
+5. [Step 4: Package for Deployment](#step-4-package-for-deployment)
+6. [Step 5: Deploy to TI Board](#step-5-deploy-to-ti-board)
 
-This repository provides a collection of scripts for various image recognition tasks such as classification, segmentation, detection and keypoint detection. 
-- These scripts can be used for Model Compilation, Inference, Accuracy & Performance benchmarking of Deep Neural Networks (DNN). 
-- Aspects such dataset loading, pre-processing and post-processing as taken care for the models in our model zoo.
-- These benchmarks in this repository can be run either in PC simulation mode or on device. 
+---
 
-Getting the correct functionality and accuracy with DNN Models is not easy. Several aspects such as dataset loading, pre-processing and post-processing operations have to be matched to that of the original training framework to get meaningful functionality and accuracy. There is much difference in these operations across various popular models and much effort has gone into matching that functionality.
+## Prerequisites
 
-<hr>
+### System Requirements
+- **Python**: 3.10 
+- **TIDL Tools**: Version 9.2 (matching the version you need for compilation)
+- **Docker** (optional but recommended for consistent environment)
 
-## Release Notes
+### Install TIDL Tools
 
+Download and install TIDL Tools version 9.2 using the setup script:
 
-<hr>
+```bash
+bash setup_pc.sh
+```
 
-## Important features:
-- Runs on both PC Simulation (model compilation and inference) and on EVM (model inference only).
-- This package can be used for accuracy and performance (inferene time) estimates.
-- Most of the models in TI ModelZoo [edgeai-modelzoo](https://github.com/TexasInstruments/edgeai-tensorlab/tree/main/edgeai-modelzoo) is supported off-the-shelf in this package. Custom model benchmark can also be easily done (please refer to the documentation and example).
-- Uses [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) for model compilation and inference. edgeai-tidl-tools can take a float model and compile it using PTQ (with an iterative calibration procedure) to an INT model for use on target. It can also accept a pre-quantized model to avoid the iterative calibration, so that the compilation is instantaneous. 
-- Read more about quantization in general and specifically about pre-quantized models at [edgeai-modeloptimization/torchmodelopt](https://github.com/TexasInstruments/edgeai-tensorlab/tree/main/edgeai-modeloptimization/torchmodelopt)
+This script will:
+- Download TIDL Tools 9.2
+- Install necessary dependencies
+- Configure environment variables
 
-<hr>
+### Setup Development Environment
 
-## Supported SOCs
-At the moment, this repository supports compilation and inference for the following SoCs: **TDA4VM**, **AM68A**, **AM62A**, *AM67A**, **AM69A**, **AM62**
+Use Docker for a pre-configured environment (recommended):
 
-A reference to <SOC> in this repository as commandline argument to the scripts refer to one of these SoCs.
+```bash
+cd docker/
+bash docker_build.sh      # Build the Docker image
+bash docker_run.sh        # Run the container
+```
 
-This <SOC> argument is used for multiple purposes:
-- To set TIDL_TOOLS_PATH and LD_LIBRARY_PATH used to point to the correct tidl_tools for a device
-- To choose the correct preset (of compilation flags) from the dictionary TARGET_DEVICE_SETTINGS_PRESETS in [constants.py](./edgeai_benchmark/constants.py)
+Or install locally using conda/pip (if not using Docker):
 
-More details regarding SoCs and devices can be seen at the [EdgeAI landing repository](https://github.com/TexasInstruments/edgeai/blob/main/readme_sdk.md).
+```bash
+conda activate /home/deltax/work/onnx_model_conversion/edgeai_benchmark/.conda
+pip install -r requirements_pc.txt
+```
 
-<hr>
+---
 
-## Version information
-By default, the tidl_tools that are installed are for the latest EdgeAI-SDK/TIDL release. however, if you would like to use an older version of tidl_tools, checkout the corresponding git branch and use that.
+## Step 1: Prepare Your Dataset
 
-## Setup on PC
-See the [setup instructions](./docs/setup_instructions.md)
+Your dataset is used for **calibration** - quantizing the model to 16-bit or 8-bit integer format.
 
+### Directory Structure
 
-## Usage on PC
-See the [usage instructions](./docs/usage.md)
+Create this structure in `dependencies/datasets/`:
 
-<hr>
+```
+dependencies/datasets/icms_det/
+├── images/                 # All your input images
+│   ├── image1.jpg
+│   ├── image2.jpg
+│   └── ...
+└── annotations/            # COCO format annotations
+    └── instances_val.json
+```
 
-## Compiling Custom Models on PC
-See the **[instructions to compile custom models](./docs/custom_models.md)**
+### Annotations Format
 
+Your `instances_val.json` must follow **COCO format**:
 
-## Pre-Complied Model Artifacts 
-See [pre-compiled model artifacts](./docs/precompiled_modelartifacts.md)
+```json
+{
+  "images": [
+    {"id": 1, "file_name": "image1.jpg", "height": 384, "width": 640},
+    {"id": 2, "file_name": "image2.jpg", "height": 384, "width": 640}
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [x, y, width, height],
+      "area": width * height,
+      "iscrowd": 0
+    }
+  ],
+  "categories": [
+    {"id": 1, "name": "class_name_1"},
+    {"id": 2, "name": "class_name_2"},
+    ...
+    {"id": 10, "name": "class_name_10"}
+  ]
+}
+```
 
+**Key Points:**
+- 10 classes in your dataset
+- Image dimensions: 384×640 (matches your model's input)
+- At least 1 calibration image (recommended: 50+ for better quantization)
 
-## Setup and Usage on development board/EVM
-The compiled models can be used for inference on development board/EVM. See **[setup and usage instruction for EVM](./docs/usage_evm.md)**
+---
 
-<hr>
+## Step 2: Configure Your Model
 
-## LICENSE
-Please see the License under which this repository is made available: [LICENSE](./LICENSE.md)
+### 2a. Add Dataset Configuration
 
-<hr>
+Edit `edgeai_benchmark/datasets/__init__.py`:
 
-## References
-[1] **ImageNet ILSVRC Dataset**: Olga Russakovsky*, Jia Deng*, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, Alexander C. Berg and Li Fei-Fei. (* = equal contribution) ImageNet Large Scale Visual Recognition Challenge. International Journal of Computer Vision, 2015. http://www.image-net.org/ <br>
+```python
+# Add at the beginning with other dataset categories
+DATASET_CATEGORY_ICMS_DET = 'icms_det'  # Your custom dataset
 
-[2] **COCO Dataset**: Microsoft COCO: Common Objects in Context, Tsung-Yi Lin, Michael Maire, Serge Belongie, Lubomir Bourdev, Ross Girshick, James Hays, Pietro Perona, Deva Ramanan, C. Lawrence Zitnick, Piotr Dollár, https://arxiv.org/abs/1405.0312, https://cocodataset.org/ <br>
+# Add to dataset_info dictionary
+'icms_det': {
+    'task_type': 'detection',
+    'category': DATASET_CATEGORY_ICMS_DET,
+    'type': COCODetection,
+    'size': 10000,
+    'split': 'images'
+},
 
-[3] **PascalVOC Dataset**: The PASCAL Visual Object Classes (VOC) Challenge, Everingham, M., Van Gool, L., Williams, C. K. I., Winn, J. and Zisserman, A., International Journal of Computer Vision, 88(2), 303-338, 2010, http://host.robots.ox.ac.uk/pascal/VOC/ <br>
+# In the dataset loading section, add this block
+if check_dataset_load(settings, DATASET_CATEGORY_ICMS_DET) and \
+   (DATASET_CATEGORY_ICMS_DET in dataset_list):
+    
+    print(utils.log_color("\nINFO", f"loading dataset", 
+          f"category:{DATASET_CATEGORY_ICMS_DET}"))
 
-[4] **ADE20K Scene Parsing Dataset** Scene Parsing through ADE20K Dataset. Bolei Zhou, Hang Zhao, Xavier Puig, Sanja Fidler, Adela Barriuso and Antonio Torralba. Computer Vision and Pattern Recognition (CVPR), 2017. Semantic Understanding of Scenes through ADE20K Dataset. Bolei Zhou, Hang Zhao, Xavier Puig, Tete Xiao, Sanja Fidler, Adela Barriuso and Antonio Torralba. International Journal on Computer Vision (IJCV). https://groups.csail.mit.edu/vision/datasets/ADE20K/, http://sceneparsing.csail.mit.edu/ <br>
+    icms_det_calib_cfg = dict(
+        num_classes=10,
+        image_dir=f'{settings.datasets_path}/icms_det/images',
+        annotation_file=f'{settings.datasets_path}/icms_det/annotations/instances_val.json',
+        shuffle=True,
+        num_frames=settings.calibration_frames,
+        name=DATASET_CATEGORY_ICMS_DET
+    )
+    
+    icms_det_val_cfg = dict(
+        num_classes=10,
+        image_dir=f'{settings.datasets_path}/icms_det/images',
+        annotation_file=f'{settings.datasets_path}/icms_det/annotations/instances_val.json',
+        shuffle=False,
+        num_frames=settings.num_frames,
+        name=DATASET_CATEGORY_ICMS_DET
+    )
+    
+    dataset_cache[DATASET_CATEGORY_ICMS_DET]['calibration_dataset'] = \
+        COCODetection(**icms_det_calib_cfg, download=False)
+    
+    dataset_cache[DATASET_CATEGORY_ICMS_DET]['input_dataset'] = \
+        COCODetection(**icms_det_val_cfg, download=False)
+```
 
-[5] **Cityscapes Dataset**: M. Cordts, M. Omran, S. Ramos, T. Rehfeld, M. Enzweiler, R. Benenson, U. Franke, S. Roth, and B. Schiele, “The Cityscapes Dataset for Semantic Urban Scene Understanding,” in Proc. of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016. https://www.cityscapes-dataset.com/ <br>
+### 2b. Add Model Configuration
 
-[6] **MMDetection: Open MMLab Detection Toolbox and Benchmark**, Chen, Kai and Wang, Jiaqi and Pang, Jiangmiao and Cao, Yuhang and Xiong, Yu and Li, Xiaoxiao and Sun, Shuyang and Feng, Wansen and Liu, Ziwei and Xu, Jiarui and Zhang, Zheng and Cheng, Dazhi and Zhu, Chenchen and Cheng, Tianheng and Zhao, Qijie and Li, Buyu and Lu, Xin and Zhu, Rui and Wu, Yue and Dai, Jifeng and Wang, Jingdong and Shi, Jianping and Ouyang, Wanli and Loy, Chen Change and Lin, Dahua. arXiv:1906.07155, 2019 <br>
+Edit `configs/detection.py` and add your model config in the `get_configs()` function:
 
-[7] **SSD: Single Shot MultiBox Detector**, Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian Szegedy, Scott Reed, Cheng-Yang Fu, Alexander C. Berg. In the Proceedings of the European Conference on Computer Vision (ECCV), 2016. <br>
+```python
+'icms-detect-001': utils.dict_update(
+    {
+        'task_type': 'detection',
+        'dataset_category': datasets.DATASET_CATEGORY_ICMS_DET,
+        'calibration_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_ICMS_DET]['calibration_dataset'],
+        'input_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_ICMS_DET]['input_dataset'],
+    },
+    preprocess=preproc_transforms.get_transform_onnx(
+        resize=(384, 640),
+        crop=(384, 640),
+        reverse_channels=False,
+        data_layout=constants.NCHW,
+        backend='cv2',
+        interpolation=cv2.INTER_LINEAR,
+        resize_with_pad=[True, "corner"],
+        add_flip_image=False,
+        pad_color=[114, 114, 114]
+    ),
+    session=onnx_session_type(
+        **sessions.get_common_session_cfg(settings, work_dir=work_dir),
+        runtime_options=settings.runtime_options_onnx_np2(
+            det_options=True,
+            ext_options={
+                'object_detection:meta_arch_type': 6,
+                'object_detection:meta_layers_names_list': 'models/detection/icms1/w_sami.prototxt'
+            },
+            fast_calibration=True
+        ),
+        model_path=f'models/detection/icms1/w_sami.onnx'
+    ),
+    postprocess=postproc_transforms.get_transform_detection_yolov5_onnx(
+        squeeze_axis=None,
+        normalized_detections=False,
+        resize_with_pad=True,
+        formatter=postprocess.DetectionBoxSL2BoxLS()
+    ),
+    metric=dict(label_offset_pred=datasets.label_offset_0to1(num_classes=10)),
+    model_info=dict(metric_reference={'accuracy_ap[.5]%': 96.00}, model_shortlist=10)
+),
+```
 
-[8] **MLPerf Inference Benchmark**, Vijay Janapa Reddi and Christine Cheng and David Kanter and Peter Mattson and Guenther Schmuelling and Carole-Jean Wu and Brian Anderson and Maximilien Breughe and Mark Charlebois and William Chou and Ramesh Chukka and Cody Coleman and Sam Davis and Pan Deng and Greg Diamos and Jared Duke and Dave Fick and J. Scott Gardner and Itay Hubara and Sachin Idgunji and Thomas B. Jablin and Jeff Jiao and Tom St. John and Pankaj Kanwar and David Lee and Jeffery Liao and Anton Lokhmotov and Francisco Massa and Peng Meng and Paulius Micikevicius and Colin Osborne and Gennady Pekhimenko and Arun Tejusve Raghunath Rajan and Dilip Sequeira and Ashish Sirasao and Fei Sun and Hanlin Tang and Michael Thomson and Frank Wei and Ephrem Wu and Lingjie Xu and Koichi Yamada and Bing Yu and George Yuan and Aaron Zhong and Peizhao Zhang and Yuchen Zhou, arXiv:1911.02549, 2019 <br>
+**Key Configuration Breakdown:**
+- `task_type`: 'detection' - Your model type
+- `dataset_category`: ICMS_DET - Points to your dataset
+- `preprocess`: Image preprocessing (resize, normalize, etc.)
+  - Input size: 384×640
+  - Padding color: [114, 114, 114] (typical for YOLO)
+- `session`: ONNX runtime configuration
+  - `meta_arch_type: 6` - YOLO architecture
+  - Calibration enabled for quantization
+- `postprocess`: Detection output processing (bounding box formatting)
+- `model_info`: Performance reference metrics
 
-[8] **Pytorch/Torchvision**: Torchvision the machine-vision package of torch, Sébastien Marcel, Yann  Rodriguez, MM '10: Proceedings of the 18th ACM international conference on Multimedia October 2010 Pages 14851488 https://doi.org/10.1145/1873951.1874254, https://pytorch.org/vision/stable/index.html
+### 2c. Update Settings
 
-[8] **TensorFlow Model Garden**: The TensorFlow Model Garden is a repository with a number of different implementations of state-of-the-art (SOTA) models and modeling solutions for TensorFlow users. https://github.com/tensorflow/models <br>
+Edit `settings_base.yaml`:
 
-[9] **TensorFlow Object Detection API**: Speed/accuracy trade-offs for modern convolutional object detectors. Huang J, Rathod V, Sun C, Zhu M, Korattikara A, Fathi A, Fischer I, Wojna Z, Song Y, Guadarrama S, Murphy K, CVPR 2017, https://github.com/tensorflow/models/tree/master/research/object_detection <br>
+```yaml
+# Target device for compilation
+target_device: TDA4VM
 
-[10] **Tensorflow DeepLab**: DeepLab: Deep Labelling for Semantic Image Segmentation https://github.com/tensorflow/models/tree/master/research/deeplab
+# Quantization precision (8 or 16 bits)
+tensor_bits: 16
 
-[11] **TensorFlow Official Model Garden**, Chen Chen and Xianzhi Du and Le Hou and Jaeyoun Kim and Pengchong, Jin and Jing Li and Yeqing Li and Abdullah Rashwan and Hongkun Yu, 2020, https://github.com/tensorflow/models/tree/master/official <br>
+# Frames for inference testing
+num_frames: 5
 
-[12] **GluonCV**: GluonCV and GluonNLP: Deep Learning in Computer Vision and Natural Language Processing
-Jian Guo, He He, Tong He, Leonard Lausen, Mu Li, Haibin Lin, Xingjian Shi, Chenguang Wang, Junyuan Xie, Sheng Zha, Aston Zhang, Hang Zhang, Zhi Zhang, Zhongyue Zhang, Shuai Zheng, Yi Zhu, https://arxiv.org/abs/1907.04433
+# Frames for calibration (post-training quantization)
+calibration_frames: 1
 
-[13] **MMPose: Open-source toolbox for pose estimation**, Collection of different models and post processing techniques that can be useful for multi-person pose estimation https://github.com/open-mmlab/mmpose
+# Optional - runtime options for advanced optimization
+# runtime_options:
+#   accuracy_level: 1
 
+# Path to your datasets
+datasets_path: './dependencies/datasets'
+
+# Model selection - only compile your model
+model_selection: ['icms-detect-001']
+
+# Dataset selection
+dataset_selection: ['icms_det']
+
+# Task selection
+task_selection: ['detection']
+
+# Detection settings
+detection_threshold: 0.3
+detection_top_k: 200
+
+# Enable TIDL optimization
+tidl_offload: True
+input_optimization: True
+
+# Save output visualizations
+save_output: True
+write_results: True
+```
+
+---
+
+## Step 3: Run Model Compilation
+
+### What Happens During Compilation
+
+1. **Loading**: Model is loaded (ONNX format)
+2. **Preprocessing Validation**: Preprocessing pipeline is tested
+3. **Calibration**: Model is calibrated using your dataset images
+4. **Quantization**: Model is quantized to 16-bit (or 8-bit) integers
+5. **Compilation**: Optimized for TDA4VM processor
+6. **Output**: Compiled artifacts saved to `work_dirs/modelartifacts/TDA4VM/`
+
+### Run Compilation on PC
+
+```bash
+# Activate your environment (if not in Docker)
+conda activate /home/deltax/work/onnx_model_conversion/edgeai_benchmark/.conda
+
+# Run benchmarks (this compiles and tests your model)
+./run_benchmarks_pc.sh TDA4VM
+```
+
+**What This Script Does:**
+- Loads your model configuration from `settings_base.yaml`
+- Selects only `icms-detect-001` for processing
+- Uses `icms_det` dataset for calibration
+- Compiles for `TDA4VM` target device
+- Saves compiled artifacts to `work_dirs/modelartifacts/TDA4VM/`
+- Runs inference to validate accuracy
+
+### Monitor Compilation Progress
+
+Check the output for:
+```
+INFO: Compiling model: icms-detect-001
+INFO: Using dataset: icms_det
+INFO: Calibration in progress...
+INFO: Quantization complete
+INFO: Model compiled successfully
+```
+
+**Troubleshooting:**
+- If compilation fails, check dataset path and COCO JSON format
+- Ensure TIDL Tools 9.2 is properly installed
+- Verify image paths exist in `dependencies/datasets/icms_det/images/`
+
+---
+
+## Step 4: Package for Deployment
+
+After successful compilation, package the model artifacts for deployment to your TI board.
+
+### Run Packaging Script
+
+```bash
+./run_package_artifacts_for_evm.sh
+```
+
+**What This Does:**
+- Collects compiled model artifacts
+- Organizes them in deployment-ready structure
+- Packages everything to `work_dirs/modelpackage/TDA4VM/`
+
+### Output Structure
+
+After packaging, you'll have:
+
+```
+work_dirs/modelpackage/TDA4VM/
+├── icms-detect-001/
+│   ├── model.so              # Compiled model binary
+│   ├── param.yaml            # Model parameters
+│   ├── model.onnx            # Original model (reference)
+│   └── artifacts/            # All compilation artifacts
+```
+
+---
+
+## Step 5: Deploy to TI Board
+
+### Transfer Files to Board
+
+From your PC, transfer the packaged model to your TI board:
+
+```bash
+# From PC - copy to board
+scp -r work_dirs/modelpackage/TDA4VM/icms-detect-001/ \
+    user@<board_ip>:/path/to/deployment/
+```
+
+### Run on Board
+
+On the TI board, use the compiled model for inference:
+
+```bash
+# On the board
+python3 inference_script.py \
+    --model models/icms-detect-001/model.so \
+    --input image.jpg
+```
+
+See [usage_evm.md](./docs/usage_evm.md) for detailed EVM deployment instructions.
+
+---
+
+## Complete Workflow Summary
+
+### Quick Reference
+
+```bash
+# 1. Setup environment
+bash setup_pc.sh                    # Install TIDL Tools 9.2
+conda activate ./.conda            # Activate environment
+
+# 2. Prepare dataset
+# Place images in: dependencies/datasets/icms_det/images/
+# Place annotations in: dependencies/datasets/icms_det/annotations/instances_val.json
+
+# 3. Configure model
+# Edit: edgeai_benchmark/datasets/__init__.py (add dataset config)
+# Edit: configs/detection.py (add model config)
+# Edit: settings_base.yaml (set model/dataset selection)
+
+# 4. Compile model
+./run_benchmarks_pc.sh TDA4VM       # Compiles & validates model
+
+# 5. Package for deployment
+./run_package_artifacts_for_evm.sh  # Packages compiled artifacts
+
+# 6. Deploy to board
+scp -r work_dirs/modelpackage/TDA4VM/icms-detect-001/ \
+    user@board_ip:/deployment/path/
+```
+
+---
+
+## Configuration Reference
+
+### Model Configuration Parameters (detection.py)
+
+| Parameter | Description | Your Value |
+|-----------|-------------|-----------|
+| `task_type` | Model task | `detection` |
+| `dataset_category` | Dataset to use | `DATASET_CATEGORY_ICMS_DET` |
+| `resize` | Input dimensions | `(384, 640)` |
+| `meta_arch_type` | Detection architecture | `6` (YOLO) |
+| `num_classes` | Number of classes | `10` |
+| `tensor_bits` | Quantization (8 or 16) | `16` |
+| `calibration_frames` | Calibration samples | `1-50` |
+
+### Settings Configuration (settings_base.yaml)
+
+| Parameter | Description | Your Value |
+|-----------|-------------|-----------|
+| `target_device` | Compile target | `TDA4VM` |
+| `tensor_bits` | Quantization precision | `16` |
+| `num_frames` | Test frames | `5` |
+| `calibration_frames` | Calibration frames | `1` |
+| `model_selection` | Models to compile | `['icms-detect-001']` |
+| `dataset_selection` | Datasets to use | `['icms_det']` |
+| `task_selection` | Tasks to run | `['detection']` |
+
+---
+
+## Important Notes
+
+### Preprocessing
+- Your model expects images of **384×640**
+- Images are resized with padding (corner-aligned)
+- Padding color is **[114, 114, 114]** (typical YOLO standard)
+- No channel reversal needed (input is BGR)
+
+### Quantization
+- **16-bit quantization** is safer for custom models
+- Reduces model size by ~50% vs float32
+- Minimal accuracy loss
+- Use **8-bit only** if you need higher compression and can tolerate ~1-2% accuracy drop
+
+### Calibration
+- Minimum 1 image (but **50+ recommended** for better results)
+- Use diverse images covering all scenarios
+- Must be same size/aspect ratio as training data
+
+### COCO Format Requirements
+- All images must be listed in `images` array
+- All bounding boxes must be in COCO format: `[x, y, width, height]`
+- All 10 classes must be defined in `categories`
+- `area = width * height` for each annotation
+
+---
+
+## Useful Links
+
+- [TI EdgeAI GitHub](https://github.com/TexasInstruments/edgeai)
+- [TIDL Tools Documentation](https://www.ti.com/edgeai)
+- [Model Zoo](https://github.com/TexasInstruments/edgeai-tensorlab/tree/main/edgeai-modelzoo)
+- [Custom Models Guide](./docs/custom_models.md)
+- [EVM Deployment Guide](./docs/usage_evm.md)
+
+---
+
+## Common Issues & Solutions
+
+### Issue: "Dataset not found"
+**Solution**: Verify `dependencies/datasets/icms_det/images/` exists with images
+
+### Issue: "COCO JSON format error"
+**Solution**: Validate JSON syntax and ensure all images are listed in `images` array
+
+### Issue: "TIDL Tools not found"
+**Solution**: Run `bash setup_pc.sh` again to reinstall TIDL Tools 9.2
+
+### Issue: "Calibration failed"
+**Solution**: Check calibration images are accessible and in correct format
+
+### Issue: "Memory error during compilation"
+**Solution**: Reduce `calibration_frames` or use 8-bit quantization
+
+---
+
+**Author:** Sami (Well Sami)  
+**Last Updated:** February 2026  
+**TIDL Version:** 9.2  
+**Target Device:** TDA4VM
