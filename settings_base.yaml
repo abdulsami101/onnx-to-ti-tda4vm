@@ -1,0 +1,215 @@
+# execution pipeline type - currently only accuracy pipeline is defined
+pipeline_type : 'accuracy'
+
+# target_device indicates the SoC for which the model compilation will take place
+# the actual target_device depends on the tidl_tools being used.
+# currently this field is for information only - setting to null is fine
+# use one of: TDA4VM AM62A AM68A AM69A
+# (Note: until r8.5 only TDA4VM was supported)
+target_device : TDA4VM
+
+# quantization bit precision
+# options are: 8 16 
+# tensor_bits : 16
+tensor_bits : 16
+
+# number of frames for inference
+num_frames : 5 #2683 #10000 #50000
+
+# number of frames to be used for post training quantization / calibration
+calibration_frames : 1 #50
+
+# number of iterations to be used for post training quantization / calibration
+calibration_iterations : 1 #25 #50
+
+# runtime_options to be passed to the core session. default: null or a dict
+# eg. (in next line and with preceding spaces to indicate this is a dict entry) accuracy_level : 0
+# runtime_options :
+#   accuracy_level: 1    #this is automatically set as 1 if you set tensor bits as 8
+#   advanced_options:output_feature_16bit_names_list: '363,561' #layers that you want to be treated as 16 bit
+
+# folder where benchmark configs are defined. this should be python importable
+# # if this is None, the internally defined minimal set of configs will be used
+configs_path : './configs'
+
+# folder where models are available
+models_path : '../edgeai-modelzoo/models'
+
+# create your datasets under this folder
+datasets_path : './dependencies/datasets'
+
+# path where precompiled modelartifacts are placed
+modelartifacts_path : './work_dirs/modelartifacts/{target_device}'
+
+# path where the packaged precompiled modelartifacts are placed
+modelpackage_path : './work_dirs/modelpackage/{target_device}'
+
+# session types to use for each model type
+session_type_dict : {'onnx':'onnxrt', 'tflite':'tflitert', 'mxnet':'tvmdlr'}
+
+# wild card list to match against model_path, model_id or model_type - if null, all models wil be shortlisted
+# only models matching these criteria will be considered - even for model_selection
+#   examples: ['onnx'] ['tflite'] ['mxnet'] ['onnx', 'tflite']
+#   examples: ['resnet18.onnx', 'resnet50_v1.tflite'] ['classification'] ['imagenet1k'] ['torchvision'] ['coco']
+#   examples: [cl-0000, od-2020, ss-2580, cl-3090, od-5120, ss-5710, cl-6360, od-8020, od-8200, od-8220, od-8420, ss-8610, kd-7060, 3dod-7100, 6dpose-7200, ss-7618]
+#   examples: [cl-0000, od-2020, cl-6360, od-8200, od-8270, od-8410, ss-8610, ss-8630, ss-8710, ss-8720]
+# model_selection : ['pha-cl-0001']
+# model_selection : ['pha-0005']
+# model_selection : ['vit-cl-0001']
+# model_selection : ['cl-6600']
+# model_selection : ['cl-6060']
+# model_selection : ['pha-0004']
+# model_selection: ['pha-kpts-0001']
+# model_selection: ['pha-hg-0002'] 
+# model_selection: ['pha-gaze-test']
+# model_selection: ['pha-facelm-0001']
+# model_selection: ['pha-0005']
+# model_selection: ['pha-facelm-0002']
+# model_selection: ['pha-driver-bh-0001']
+# model_selection: ['pha-facelm-0003']
+# model_selection: ['pha-hg-0001'] 
+# model_selection: ['pha-hg-0003'] 
+# model_selection: ['pha-facelm-0004'] 
+# model_selection: ['pha-kpts-0002']
+# model_selection: ['pha-facelm-test'] 
+# model_selection: ['pha-facelm-tfl']
+# model_selection: ['pha-hg-0005'] 
+# model_selection: ['pha-driver-bh-0002']
+# model_selection: ['pha-hg-0006'] 
+# model_selection: ['pha-facelm-model-0001']
+# model_selection: [
+  # 'pha-facelm-model-0002',
+  # 'pha-facelm-model-0003',
+  # 'pha-facelm-model-0004',
+  # 'pha-facelm-model-0005'
+# ]
+# model_selection: ['pha-facelm-model-0001']
+# model_selection: ['pha-facelm-model-0006']
+# model_selection: ['pha-facelm-edge-tv-0002']
+# model_selection: ['pha-facelm-tv-0001']
+# model_selection: ['pha-facelm-timm-0001']
+# model_selection: ['pha-facelm-timm-0002']
+# model_selection: ['pha-facelm-model-0008']
+# model_selection: ['pha-facelm-model-0012']
+# model_selection: ['pha-driver-bh-0003']
+# model_selection: ['pha-driver-bh-0004']
+# model_selection: ['pha-0007']
+# model_selection: ['pha-0008']
+# model_selection: ['pha-0009']
+# model_selection: ['pha-0010']
+# model_selection: ['pha-kpts-0003']
+# model_selection: ['pha-driver-bh-0005']
+# model_selection: ['pha-driver-bh-0006']
+# model_selection: ['pha-facelm-model-0013']
+# model_selection: ['pha-kpts-0004']
+# model_selection: ['pha-driver-bh-0008']
+# model_selection: ['pha-driver-bh-0009']
+
+# model_selection: ['pha-kpts-0005']
+# model_selection: ['pha-driver-bh-0011']
+# model_selection: ['pha-0011']
+# model_selection: ['pha-facelm-model-0014']
+# model_selection: ['pha-facelm-model-0015']
+# model_selection: ['pha-hg-0007']
+# model_selection: ['pha-0012']
+# model_selection: ['pha-hg-0008']
+# model_selection: ['pha-hg-0009']
+# model_selection: ['kadif-3dod']
+# model_selection: ['de-kadif-0001']
+# model_selection: ['cl-6060']
+model_selection: ['icms-detect-001']
+
+
+
+###################################################pha2#########################################################################
+
+
+# model_selection:[ '0001_small_16bit' '0002_small_16bit','0002_small_8bit', '0002_nano_16bit', '0002_nano_8bit']
+# model_selection:  ['pha-2-facelm-24-viz-0001'] #['pha-2-facelm-24-viz-0001', 'pha-2-facelm-24-viz-0002', 'pha-2-facelm-24-viz-0003', 'pha-2-facelm-24-viz-0004', 'pha-2-facelm-24-viz-0005', 'pha-2-facelm-24-viz-0006.onnx']
+# model_selection: ['pha2-gaze-0001', 'pha2-gaze-0002','pha2-gaze-0003_Y',pha2-gaze-0003_default_mean_scale]
+
+
+# model_shortlist can be a number, which indicates a predefined shortlist, and a fraction of the models will be selected
+# model_shortlist and model_selection are complimentary - they can be used together.
+# 0 means no models, 1 means 1 model, 15 means roughly 15% of models, 100 means all the models.
+#   examples: null
+#   examples: 10
+#   examples: 20
+#   examples: 30
+model_shortlist: null
+
+# wild card list to match against the tasks. it null, all tasks will be run
+# example: ['classification', 'detection', 'segmentation', 'depth_estimation', 'keypoint_detection', 'detection_3d']
+# example: 'classification'
+# example: null (Note: null means no filter - run all the tasks)
+# task_selection : ['classification']
+# task_selection : ['keypoint_detection']
+
+task_selection: ['detection']
+# task_selection: ['depth_estimation']
+# task_selection: ['detection_3d']
+# task_selection : ['gaze_estimation']
+# task_selection : ['face_landmark_24']
+
+# wild card list to match against runtime name. if null, all runtimes will be considered
+# example: ['onnxrt', 'tflitert', 'tvmdlr']
+# example: ['onnxrt']
+runtime_selection : null
+
+# dataset_selection can be a list of dataset categories for which the models will be run
+# set this to null to run all the models
+# example: ['coco']
+# example: ['imagenet', 'coco', 'cocoseg21', 'ade20k', 'cocokpts', 'kitti_lidar_det', 'ti-robokit_semseg_zed1hd', 'ycbv']
+# my custom: ['phacls', 'phakpts', 'pha']
+# dataset_selection : ['phacls']
+# dataset_selection : ['imagenet']
+# dataset_selection: ['phakpts']
+
+# dataset_selection: ['phahg']
+# dataset_selection: ['pha']
+# dataset_selection: ['nyudepthv2']
+# dataset_selection: ['kitti_lidar_det_1class']
+# dataset_selection: ['regression_gaze']
+# dataset_selection: ['regression_facelm']
+dataset_selection: ['icms_det']
+
+# use TIDL offload to speedup inference
+tidl_offload : True 
+
+# input optimization to improve FPS: False or null
+# null will cause the default value set in sessions.__init__ to be used.
+input_optimization : True
+
+# detection threshold
+# recommend 0.3 for best fps, 0.05 for accuracy measurement
+detection_threshold : 0.3
+
+# detection  - top_k boxes that go into nms
+# (this is an intermediate set, not the final number of boxes that are kept)
+# recommend 200 for best fps, 500 for accuracy measurement
+detection_top_k : 200
+
+# verbose mode - print out more information
+verbose : False
+
+# save detection, segmentation, human pose estimation output
+save_output : True
+
+
+# it will add horizontally flipped images in info_dict and run inference over the flipped image also
+flip_test : False
+
+# it defines if we want to use udp postprocessing in human pose estimation.
+# Paper ref: Huang et al. The Devil is in the Details: Delving into Unbiased
+# Data Processing for Human Pose Estimation (CVPR 2020).
+with_udp : false
+
+# writing of dataset.yaml, config.yaml, param.yaml and result.yaml depends on this flag
+write_results: True
+
+# wehther to apply predifened presets based on target_device
+target_device_preset : True
+
+# enable use of experimental models - these model files may not be available in modelzoo in some cases
+# experimental_models : True
+experimental_models : False

@@ -1,0 +1,24 @@
+# Regression 모델을 위한 설정 파일
+# settings_base.yaml을 상속받아 regression에 특화된 설정을 추가
+
+# 기본 설정 상속
+import: 'settings_base.yaml'
+
+# Regression 모델 선택
+model_selection: ['regnet_x_800mf_onnx']
+
+# Regression task 선택
+task_selection: ['regression']
+
+# Regression 데이터셋 선택
+dataset_selection: ['regression']
+
+# Regression을 위한 특별 설정
+
+
+# Regression 평가를 위한 설정
+
+
+# 출력 저장 설정
+save_output: True
+verbose: True
