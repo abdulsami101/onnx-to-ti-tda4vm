@@ -117,7 +117,7 @@ session_type_dict : {'onnx':'onnxrt', 'tflite':'tflitert', 'mxnet':'tvmdlr'}
 # model_selection: ['kadif-3dod']
 # model_selection: ['de-kadif-0001']
 # model_selection: ['cl-6060']
-model_selection: ['icms-detect-001']
+model_selection: ['icms-detect-002']
 
 
 
