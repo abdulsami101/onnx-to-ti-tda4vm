@@ -218,6 +218,31 @@ def get_datasets(settings, download=False, dataset_list=None):
         dataset_cache[DATASET_CATEGORY_ICMS_DET]['input_dataset'] = COCODetection(**icms_det_val_cfg, download=False)
 ################################################# sami ################################################
 
+################################################# sami_icms2 ################################################
+    if check_dataset_load(settings, DATASET_CATEGORY_ICMS_DET) and (DATASET_CATEGORY_ICMS_DET in dataset_list):
+        print(utils.log_color("\nINFO", f"loading dataset", f"category:{DATASET_CATEGORY_ICMS_DET} variant:{DATASET_CATEGORY_ICMS_DET}"))
+
+        icms_det_calib_cfg = dict(
+            num_classes = 6,
+            image_dir=f'{settings.datasets_path}/icms_det2/images',
+            annotation_file=f'{settings.datasets_path}/icms_det2/annotations/instances_val.json',
+            shuffle=True,
+            num_frames=settings.calibration_frames,
+            name=DATASET_CATEGORY_ICMS_DET)
+        
+        icms_det_val_cfg = dict(
+            num_classes = 6,
+            image_dir=f'{settings.datasets_path}/icms_det2/images',
+            annotation_file=f'{settings.datasets_path}/icms_det2/annotations/instances_val.json',
+            shuffle=False, # can be set to True as well, if needed
+            # num_frames=min(settings.num_frames,5000),
+            num_frames=settings.num_frames,
+            name=DATASET_CATEGORY_ICMS_DET)
+        dataset_cache[DATASET_CATEGORY_ICMS_DET]['calibration_dataset'] = COCODetection(**icms_det_calib_cfg, download=False)
+        dataset_cache[DATASET_CATEGORY_ICMS_DET]['input_dataset'] = COCODetection(**icms_det_val_cfg, download=False)
+################################################# sami_icms2 ################################################
+
+
 
 
 
