@@ -246,6 +246,35 @@ def get_datasets(settings, download=False, dataset_list=None):
 
 
 
+################################################# sami_icms3 ################################################
+    if check_dataset_load(settings, DATASET_CATEGORY_ICMS_DET) and (DATASET_CATEGORY_ICMS_DET in dataset_list):
+        print(utils.log_color("\nINFO", f"loading dataset", f"category:{DATASET_CATEGORY_ICMS_DET} variant:{DATASET_CATEGORY_ICMS_DET}"))
+
+        icms_det_calib_cfg = dict(
+            num_classes = 7,
+            image_dir=f'{settings.datasets_path}/icms_det3/images',
+            annotation_file=f'{settings.datasets_path}/icms_det3/annotations/instances_val.json',
+            shuffle=True,
+            num_frames=settings.calibration_frames,
+            name=DATASET_CATEGORY_ICMS_DET)
+        
+        icms_det_val_cfg = dict(
+            num_classes = 7,
+            image_dir=f'{settings.datasets_path}/icms_det3/images',
+            annotation_file=f'{settings.datasets_path}/icms_det3/annotations/instances_val.json',
+            shuffle=False, # can be set to True as well, if needed
+            # num_frames=min(settings.num_frames,5000),
+            num_frames=settings.num_frames,
+            name=DATASET_CATEGORY_ICMS_DET)
+        dataset_cache[DATASET_CATEGORY_ICMS_DET]['calibration_dataset'] = COCODetection(**icms_det_calib_cfg, download=False)
+        dataset_cache[DATASET_CATEGORY_ICMS_DET]['input_dataset'] = COCODetection(**icms_det_val_cfg, download=False)
+################################################# sami_icms3 ################################################
+
+
+
+
+
+
     if check_dataset_load(settings, DATASET_CATEGORY_IMAGENET) and (DATASET_CATEGORY_IMAGENET in dataset_list):
         dataset_variant = settings.dataset_type_dict[DATASET_CATEGORY_IMAGENET] if \
             settings.dataset_type_dict is not None else DATASET_CATEGORY_IMAGENET
@@ -271,7 +300,7 @@ def get_datasets(settings, download=False, dataset_list=None):
         # what is provided is mechanism to select one of the imagenet variants
         # but only one is selected and assigned to the key imagenet
         # all the imagenet models will use this variant.
-        print(f'Value of download here: {download}')# TODO: LUKE remove
+        print(f'Value of download here: {download}')# TODO: LUKE remove 
         dataset_cache[DATASET_CATEGORY_IMAGENET]['calibration_dataset'] = ImageNetDataSetType(**imagenet_cls_calib_cfg, download=True)
         dataset_cache[DATASET_CATEGORY_IMAGENET]['input_dataset'] = ImageNetDataSetType(**imagenet_cls_val_cfg, download=True)
     #

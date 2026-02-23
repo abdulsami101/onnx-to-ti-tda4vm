@@ -14,13 +14,13 @@ target_device : TDA4VM
 tensor_bits : 16
 
 # number of frames for inference
-num_frames : 5 #2683 #10000 #50000
+num_frames : 100 #2683 #10000 #50000
 
 # number of frames to be used for post training quantization / calibration
-calibration_frames : 1 #50
+calibration_frames : 50 #50
 
 # number of iterations to be used for post training quantization / calibration
-calibration_iterations : 1 #25 #50
+calibration_iterations : 25 #25 #50
 
 # runtime_options to be passed to the core session. default: null or a dict
 # eg. (in next line and with preceding spaces to indicate this is a dict entry) accuracy_level : 0
@@ -117,7 +117,7 @@ session_type_dict : {'onnx':'onnxrt', 'tflite':'tflitert', 'mxnet':'tvmdlr'}
 # model_selection: ['kadif-3dod']
 # model_selection: ['de-kadif-0001']
 # model_selection: ['cl-6060']
-model_selection: ['icms-detect-002']
+model_selection: ['icms-detect-003']
 
 
 
