@@ -1106,8 +1106,51 @@ def get_configs(settings, work_dir):
         ),
 
 
+        ###################################sami_icms3###############################################
+        
+        'icms-detect-003':utils.dict_update(
+            {
+                'task_type': 'detection',
+                'dataset_category': datasets.DATASET_CATEGORY_ICMS_DET,
+                'calibration_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_ICMS_DET]['calibration_dataset'],
+                'input_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_ICMS_DET]['input_dataset'],                
+            },
+            preprocess=preproc_transforms.get_transform_onnx(
+                resize=(384, 640), 
+                crop=(384, 640), 
+                reverse_channels=False,
+                data_layout=constants.NCHW,
+                backend='cv2',
+                interpolation=cv2.INTER_LINEAR,
+                resize_with_pad=[True, "corner"],
+                add_flip_image=False, 
+                pad_color=[114, 114, 114]),
 
+            session=onnx_session_type(**sessions.get_common_session_cfg(
+                    settings, 
+                    work_dir=work_dir,
+                ),
+                runtime_options=settings.runtime_options_onnx_np2(
+                   det_options=True, 
+                   ext_options={'object_detection:meta_arch_type': 6,
+                    'object_detection:meta_layers_names_list': 'models/detection/icms3/A.prototxt'},
 
+                    # 'advanced_options:output_feature_16bit_names_list': '1033, 711, 712, 713, 727, 728, 728, 743, 744, 745'},
+
+                    fast_calibration = True),
+                model_path=f'models/detection/icms3/A.onnx'),
+
+            postprocess=postproc_transforms.get_transform_detection_yolov5_onnx(
+                squeeze_axis=None, 
+                normalized_detections=False, 
+                resize_with_pad=True, 
+                formatter=postprocess.DetectionBoxSL2BoxLS()),
+
+            metric=dict(label_offset_pred=datasets.label_offset_0to1(num_classes=7)),
+            model_info=dict(metric_reference={'accuracy_ap[.5]%': 77.5}, model_shortlist=7)
+        ),
+
+    
 
     }
 
